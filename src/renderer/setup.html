@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Setup - Figma AI Responder</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #1a1a1a;
+      color: #fff;
+      padding: 48px 32px 32px;
+      min-height: 100vh;
+    }
+    h1 { font-size: 24px; font-weight: 600; margin-bottom: 8px; }
+    .subtitle { color: #888; font-size: 14px; margin-bottom: 32px; }
+    .form-group { margin-bottom: 24px; }
+    label { display: block; font-size: 13px; color: #aaa; margin-bottom: 8px; }
+    input {
+      width: 100%;
+      padding: 12px 14px;
+      font-size: 14px;
+      background: #2a2a2a;
+      border: 1px solid #3a3a3a;
+      border-radius: 8px;
+      color: #fff;
+    }
+    input:focus { outline: none; border-color: #0d99ff; }
+    input.error { border-color: #ff4444; }
+    input.success { border-color: #22c55e; }
+    .hint { font-size: 12px; color: #666; margin-top: 6px; }
+    .hint a { color: #0d99ff; text-decoration: none; }
+    .field-error { font-size: 12px; color: #ff4444; margin-top: 6px; min-height: 18px; }
+    button {
+      width: 100%;
+      padding: 14px;
+      font-size: 15px;
+      font-weight: 500;
+      background: #0d99ff;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    button:hover { background: #0b87e0; }
+    button:disabled { background: #555; cursor: wait; }
+    .icon {
+      width: 48px; height: 48px;
+      background: linear-gradient(135deg, #0d99ff 0%, #a855f7 100%);
+      border-radius: 12px;
+      margin-bottom: 16px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 24px;
+    }
+    .error-box {
+      background: #ff444420;
+      border: 1px solid #ff444450;
+      color: #ff6666;
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 13px;
+      margin-bottom: 16px;
+    }
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+  <div class="icon">🤖</div>
+  <h1>Figma AI Responder</h1>
+  <p class="subtitle">Enter your API keys to get started</p>
+
+  <div id="error-box" class="error-box hidden"></div>
+
+  <div class="form-group">
+    <label>Figma Access Token</label>
+    <input type="text" id="figma-token" placeholder="figd_xxxxxxxx...">
+    <p class="hint">Get from <a href="#">Figma Settings → Personal Access Tokens</a></p>
+    <p id="figma-error" class="field-error"></p>
+  </div>
+
+  <div class="form-group">
+    <label>Anthropic API Key</label>
+    <input type="text" id="anthropic-key" placeholder="sk-ant-xxxxxxxx...">
+    <p class="hint">Get from <a href="#">Anthropic Console → API Keys</a></p>
+    <p id="anthropic-error" class="field-error"></p>
+  </div>
+
+  <button id="save-btn" onclick="handleSave()">Save & Continue</button>
+
+  <script>
+    const figmaInput = document.getElementById('figma-token');
+    const anthropicInput = document.getElementById('anthropic-key');
+    const figmaError = document.getElementById('figma-error');
+    const anthropicError = document.getElementById('anthropic-error');
+    const errorBox = document.getElementById('error-box');
+    const saveBtn = document.getElementById('save-btn');
+
+    // Check if keys are already saved
+    (async function checkExisting() {
+      if (window.electronAPI) {
+        const settings = await window.electronAPI.getSettings();
+        if (settings.hasCredentials) {
+          figmaInput.placeholder = '•••••••• (saved)';
+          anthropicInput.placeholder = '•••••••• (saved)';
+          saveBtn.textContent = 'Update Keys';
+        }
+      }
+    })();
+
+    function showError(msg) {
+      errorBox.textContent = msg;
+      errorBox.classList.remove('hidden');
+    }
+
+    function clearErrors() {
+      figmaError.textContent = '';
+      anthropicError.textContent = '';
+      errorBox.classList.add('hidden');
+      figmaInput.classList.remove('error', 'success');
+      anthropicInput.classList.remove('error', 'success');
+    }
+
+    async function handleSave() {
+      clearErrors();
+
+      // If fields are empty and we have saved credentials, just close
+      const settings = await window.electronAPI.getSettings();
+      if (!figmaInput.value.trim() && !anthropicInput.value.trim() && settings.hasCredentials) {
+        window.electronAPI.closeWindow();
+        return;
+      }
+
+      const figmaToken = figmaInput.value.trim();
+      const anthropicKey = anthropicInput.value.trim();
+
+      if (!figmaToken) {
+        figmaError.textContent = 'Please enter your Figma token';
+        figmaInput.classList.add('error');
+        return;
+      }
+
+      if (!anthropicKey) {
+        anthropicError.textContent = 'Please enter your Anthropic API key';
+        anthropicInput.classList.add('error');
+        return;
+      }
+
+      saveBtn.disabled = true;
+      saveBtn.textContent = 'Validating Figma token...';
+
+      try {
+        // Check if electronAPI exists
+        if (!window.electronAPI) {
+          showError('electronAPI not available');
+          saveBtn.disabled = false;
+          saveBtn.textContent = 'Save & Continue';
+          return;
+        }
+
+        // Validate Figma
+        const figmaValid = await window.electronAPI.validateFigmaToken(figmaToken);
+        if (!figmaValid) {
+          figmaError.textContent = 'Invalid Figma token';
+          figmaInput.classList.add('error');
+          saveBtn.disabled = false;
+          saveBtn.textContent = 'Save & Continue';
+          return;
+        }
+        figmaInput.classList.add('success');
+
+        saveBtn.textContent = 'Validating Anthropic key...';
+
+        // Validate Anthropic
+        const anthropicValid = await window.electronAPI.validateAnthropicKey(anthropicKey);
+        if (!anthropicValid) {
+          anthropicError.textContent = 'Invalid Anthropic API key';
+          anthropicInput.classList.add('error');
+          saveBtn.disabled = false;
+          saveBtn.textContent = 'Save & Continue';
+          return;
+        }
+        anthropicInput.classList.add('success');
+
+        saveBtn.textContent = 'Saving...';
+
+        // Save
+        await window.electronAPI.saveSettings({ figmaToken, anthropicKey });
+
+        saveBtn.textContent = 'Done!';
+        setTimeout(() => window.electronAPI.closeWindow(), 500);
+
+      } catch (err) {
+        showError('Error: ' + err.message);
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'Save & Continue';
+      }
+    }
+  </script>
+</body>
+</html>

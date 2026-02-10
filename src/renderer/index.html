@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard - Figma AI Responder</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #1a1a1a;
+      color: #fff;
+      padding: 48px 24px 24px;
+      min-height: 100vh;
+    }
+    h1 { font-size: 20px; font-weight: 600; margin-bottom: 24px; }
+    .status-card { background: #2a2a2a; border-radius: 12px; padding: 16px; margin-bottom: 16px; }
+    .status-header { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+    .status-indicator { width: 12px; height: 12px; border-radius: 50%; background: #666; }
+    .status-indicator.active { background: #22c55e; box-shadow: 0 0 8px #22c55e66; }
+    .status-text { font-size: 15px; font-weight: 500; }
+    .status-details { font-size: 13px; color: #888; }
+    .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
+    .stat { background: #333; padding: 12px; border-radius: 8px; }
+    .stat-value { font-size: 20px; font-weight: 600; }
+    .stat-label { font-size: 12px; color: #888; margin-top: 4px; }
+    .section-title { font-size: 13px; font-weight: 500; color: #888; margin-bottom: 12px; margin-top: 24px; }
+    .file-list { background: #2a2a2a; border-radius: 12px; overflow: hidden; }
+    .file-item { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid #333; }
+    .file-item:last-child { border-bottom: none; }
+    .file-key { font-size: 13px; font-family: 'SF Mono', Monaco, monospace; color: #ccc; }
+    .remove-btn { background: none; border: none; color: #666; cursor: pointer; padding: 4px 8px; font-size: 16px; }
+    .remove-btn:hover { color: #ff4444; }
+    .add-file { display: flex; gap: 8px; margin-top: 12px; }
+    .add-file input { flex: 1; padding: 10px 12px; font-size: 13px; background: #2a2a2a; border: 1px solid #3a3a3a; border-radius: 8px; color: #fff; }
+    .add-file input:focus { outline: none; border-color: #0d99ff; }
+    .add-file button { padding: 10px 16px; font-size: 13px; background: #0d99ff; color: #fff; border: none; border-radius: 8px; cursor: pointer; }
+    .add-file button:hover { background: #0b87e0; }
+    .controls { display: flex; gap: 8px; margin-top: 24px; }
+    .controls button { flex: 1; padding: 12px; font-size: 14px; font-weight: 500; border: none; border-radius: 8px; cursor: pointer; }
+    .btn-primary { background: #22c55e; color: #fff; }
+    .btn-primary:hover { background: #1ea550; }
+    .btn-primary.stop { background: #ef4444; }
+    .btn-primary.stop:hover { background: #dc2626; }
+    .btn-secondary { background: #333; color: #fff; }
+    .btn-secondary:hover { background: #444; }
+    .empty-state { text-align: center; padding: 24px; color: #666; }
+    .hint { font-size: 12px; color: #666; margin-top: 8px; }
+    .error-banner { background: #ff444420; border: 1px solid #ff444440; color: #ff6666; padding: 12px; border-radius: 8px; font-size: 13px; margin-bottom: 16px; }
+    .hidden { display: none; }
+    .settings-section { background: #2a2a2a; border-radius: 12px; padding: 16px; margin-top: 16px; }
+    .setting-row { margin-bottom: 16px; }
+    .setting-row:last-child { margin-bottom: 0; }
+    .setting-label { font-size: 13px; font-weight: 500; color: #888; margin-bottom: 8px; display: block; }
+    .setting-input { width: 100%; padding: 10px 12px; font-size: 13px; background: #333; border: 1px solid #3a3a3a; border-radius: 8px; color: #fff; }
+    .setting-input:focus { outline: none; border-color: #0d99ff; }
+    select.setting-input { cursor: pointer; }
+    textarea.setting-input { resize: vertical; min-height: 80px; font-family: inherit; }
+    .setting-hint { font-size: 11px; color: #666; margin-top: 6px; }
+    .toggle-row { display: flex; align-items: center; justify-content: space-between; }
+    .toggle-label { font-size: 14px; color: #fff; }
+    .toggle-switch { position: relative; width: 44px; height: 24px; }
+    .toggle-switch input { opacity: 0; width: 0; height: 0; }
+    .toggle-slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #444; border-radius: 24px; transition: 0.2s; }
+    .toggle-slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: #fff; border-radius: 50%; transition: 0.2s; }
+    .toggle-switch input:checked + .toggle-slider { background-color: #22c55e; }
+    .toggle-switch input:checked + .toggle-slider:before { transform: translateX(20px); }
+  </style>
+</head>
+<body>
+  <h1>Figma AI Responder</h1>
+
+  <div id="error-banner" class="error-banner hidden"></div>
+
+  <div class="status-card">
+    <div class="status-header">
+      <div id="status-indicator" class="status-indicator"></div>
+      <span id="status-text" class="status-text">Stopped</span>
+    </div>
+    <div id="status-details" class="status-details">Not monitoring any files</div>
+
+    <div class="stats">
+      <div class="stat">
+        <div id="files-count" class="stat-value">0</div>
+        <div class="stat-label">Files Monitored</div>
+      </div>
+      <div class="stat">
+        <div id="comments-count" class="stat-value">0</div>
+        <div class="stat-label">Comments Processed</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-title">Monitored Files</div>
+  <div id="file-list" class="file-list">
+    <div class="empty-state">No files added yet</div>
+  </div>
+
+  <div class="add-file">
+    <input type="text" id="file-input" placeholder="Paste Figma file URL or key..." onkeypress="if(event.key==='Enter')addFile()">
+    <button onclick="addFile()">Add</button>
+  </div>
+  <p class="hint">Example: https://figma.com/design/AbC123xyz/...</p>
+
+  <div class="controls">
+    <button id="toggle-btn" class="btn-primary" onclick="toggleMonitoring()">Start</button>
+    <button class="btn-secondary" onclick="checkNow()">Check Now</button>
+  </div>
+
+  <div class="section-title">Settings</div>
+  <div class="settings-section">
+    <div class="setting-row">
+      <div class="toggle-row">
+        <span class="toggle-label">Push Notifications</span>
+        <label class="toggle-switch">
+          <input type="checkbox" id="notifications-toggle" onchange="saveNotifications()">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <p class="setting-hint">Get notified when AI replies to a comment</p>
+    </div>
+
+    <div class="setting-row">
+      <label class="setting-label">Trigger Word</label>
+      <input type="text" id="trigger-input" class="setting-input" placeholder="@ai" onchange="saveTrigger()">
+      <p class="setting-hint">Comments containing this trigger will get AI responses (e.g., @ai, #help, !feedback)</p>
+    </div>
+
+    <div class="setting-row">
+      <label class="setting-label">Claude Model</label>
+      <select id="model-select" class="setting-input" onchange="saveModel()">
+        <option value="claude-sonnet-4-20250514">Claude Sonnet 4 (Recommended)</option>
+        <option value="claude-opus-4-6">Claude Opus 4.6 (Most capable)</option>
+        <option value="claude-opus-4-20250514">Claude Opus 4.5</option>
+        <option value="claude-3-5-haiku-20241022">Claude 3.5 Haiku (Faster)</option>
+      </select>
+    </div>
+
+    <div class="setting-row">
+      <label class="setting-label">Custom System Prompt</label>
+      <textarea id="prompt-input" class="setting-input" placeholder="Leave empty to use default (senior designer persona)..." onchange="savePrompt()"></textarea>
+      <p class="setting-hint">Define how the AI should respond. Empty = default senior designer persona.</p>
+    </div>
+  </div>
+
+  <script>
+    const statusIndicator = document.getElementById('status-indicator');
+    const statusText = document.getElementById('status-text');
+    const statusDetails = document.getElementById('status-details');
+    const filesCount = document.getElementById('files-count');
+    const commentsCount = document.getElementById('comments-count');
+    const fileList = document.getElementById('file-list');
+    const fileInput = document.getElementById('file-input');
+    const toggleBtn = document.getElementById('toggle-btn');
+    const errorBanner = document.getElementById('error-banner');
+    const triggerInput = document.getElementById('trigger-input');
+    const modelSelect = document.getElementById('model-select');
+    const promptInput = document.getElementById('prompt-input');
+    const notificationsToggle = document.getElementById('notifications-toggle');
+
+    let isActive = false;
+    let files = [];
+
+    function extractFileKey(input) {
+      const urlMatch = input.match(/figma\.com\/(?:file|design)\/([a-zA-Z0-9]+)/);
+      return urlMatch ? urlMatch[1] : input.trim();
+    }
+
+    function renderFiles() {
+      if (files.length === 0) {
+        fileList.innerHTML = '<div class="empty-state">No files added yet</div>';
+        return;
+      }
+      fileList.innerHTML = files.map(key =>
+        `<div class="file-item">
+          <span class="file-key">${key}</span>
+          <button class="remove-btn" onclick="removeFile('${key}')" title="Remove">×</button>
+        </div>`
+      ).join('');
+    }
+
+    function updateStatus(status) {
+      isActive = status.isActive;
+      statusIndicator.className = 'status-indicator' + (isActive ? ' active' : '');
+      statusText.textContent = isActive ? 'Running' : 'Stopped';
+
+      if (status.lastCheck) {
+        statusDetails.textContent = 'Last check: ' + new Date(status.lastCheck).toLocaleTimeString();
+      } else if (files.length === 0) {
+        statusDetails.textContent = 'Add files to start monitoring';
+      } else {
+        statusDetails.textContent = 'Ready to start';
+      }
+
+      filesCount.textContent = status.filesMonitored || files.length;
+      commentsCount.textContent = status.commentsProcessed || 0;
+      toggleBtn.textContent = isActive ? 'Stop' : 'Start';
+      toggleBtn.className = 'btn-primary' + (isActive ? ' stop' : '');
+
+      if (status.lastError) {
+        errorBanner.textContent = status.lastError;
+        errorBanner.classList.remove('hidden');
+      } else {
+        errorBanner.classList.add('hidden');
+      }
+    }
+
+    async function addFile() {
+      const input = fileInput.value.trim();
+      if (!input) return;
+
+      const key = extractFileKey(input);
+      if (key && !files.includes(key)) {
+        await window.electronAPI.addFile(key);
+        files.push(key);
+        renderFiles();
+        fileInput.value = '';
+        updateStatus(await window.electronAPI.getStatus());
+      }
+    }
+
+    async function removeFile(key) {
+      await window.electronAPI.removeFile(key);
+      files = files.filter(f => f !== key);
+      renderFiles();
+      updateStatus(await window.electronAPI.getStatus());
+    }
+
+    async function toggleMonitoring() {
+      if (isActive) {
+        await window.electronAPI.stopPolling();
+      } else {
+        await window.electronAPI.startPolling();
+      }
+      updateStatus(await window.electronAPI.getStatus());
+    }
+
+    async function checkNow() {
+      await window.electronAPI.pollNow();
+    }
+
+    async function saveTrigger() {
+      const trigger = triggerInput.value.trim();
+      if (trigger) {
+        await window.electronAPI.setTrigger(trigger);
+      }
+    }
+
+    async function saveModel() {
+      await window.electronAPI.setClaudeModel(modelSelect.value);
+    }
+
+    async function savePrompt() {
+      await window.electronAPI.setSystemPrompt(promptInput.value);
+    }
+
+    async function saveNotifications() {
+      await window.electronAPI.setNotificationsEnabled(notificationsToggle.checked);
+    }
+
+    // Listen for status updates from main process
+    if (window.electronAPI && window.electronAPI.onStatusUpdate) {
+      window.electronAPI.onStatusUpdate((status) => updateStatus(status));
+    }
+
+    // Initial load
+    (async function init() {
+      if (!window.electronAPI) {
+        errorBanner.textContent = 'Error: electronAPI not available';
+        errorBanner.classList.remove('hidden');
+        return;
+      }
+      files = await window.electronAPI.getMonitoredFiles();
+      renderFiles();
+      updateStatus(await window.electronAPI.getStatus());
+
+      // Load settings
+      const settings = await window.electronAPI.getSettings();
+      triggerInput.value = settings.trigger || '@ai';
+      modelSelect.value = settings.claudeModel || 'claude-sonnet-4-20250514';
+      promptInput.value = settings.systemPrompt || '';
+      notificationsToggle.checked = await window.electronAPI.getNotificationsEnabled();
+    })();
+  </script>
+</body>
+</html>
