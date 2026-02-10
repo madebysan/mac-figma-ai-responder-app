@@ -1,0 +1,43 @@
+{
+  "name": "figma-ai-responder",
+  "version": "2.0.0",
+  "description": "Menu bar app that responds to @AI mentions in Figma comments",
+  "main": "dist/main/main.js",
+  "author": "San",
+  "license": "MIT",
+  "scripts": {
+    "build": "tsc && cp -r src/renderer dist/",
+    "start": "npm run build && electron .",
+    "dev": "tsc && cp -r src/renderer dist/ && electron .",
+    "icons": "node scripts/generate-icons.js",
+    "pack": "npm run build && electron-builder --dir",
+    "dist": "npm run build && electron-builder"
+  },
+  "build": {
+    "appId": "com.san.figma-ai-responder",
+    "productName": "Figma AI Responder",
+    "mac": {
+      "category": "public.app-category.developer-tools",
+      "icon": "assets/icon.icns",
+      "target": "dmg"
+    },
+    "files": [
+      "dist/**/*",
+      "assets/**/*"
+    ],
+    "directories": {
+      "output": "release"
+    }
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.39.0",
+    "electron-store": "^8.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "electron": "^28.0.0",
+    "electron-builder": "^24.9.0",
+    "sharp": "^0.34.5",
+    "typescript": "^5.7.0"
+  }
+}
