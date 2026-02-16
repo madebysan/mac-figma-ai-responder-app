@@ -1,6 +1,13 @@
-# Figma AI Responder
+<p align="center">
+  <img src="assets/app-icon.png" width="128" height="128" alt="Figma AI Responder app icon">
+</p>
 
-A macOS menu bar app that automatically responds to @AI mentions in Figma comments using Claude's vision API.
+<h1 align="center">Figma AI Responder</h1>
+
+<p align="center">A macOS menu bar app that automatically responds to @AI mentions<br>
+in Figma comments using Claude's vision API.</p>
+
+<p align="center">macOS · Electron · Node.js</p>
 
 ## What It Does
 
