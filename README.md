@@ -51,7 +51,7 @@ The AI is configured to act as an expert product designer providing tactical fee
 Clone the repo and install dependencies:
 
 ```bash
-git clone <repo-url>
+git clone https://github.com/madebysan/mac-figma-ai-responder-app.git
 cd mac-figma-ai-responder-app
 npm install
 ```
