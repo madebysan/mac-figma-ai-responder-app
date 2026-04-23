@@ -111,7 +111,7 @@ export async function verifyApiKey(apiKey: string): Promise<boolean> {
     const anthropic = new Anthropic({ apiKey });
     // Make a minimal API call to verify the key
     await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-sonnet-4-6',
       max_tokens: 10,
       messages: [{ role: 'user', content: 'Hi' }],
     });

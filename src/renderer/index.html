@@ -129,10 +129,9 @@
     <div class="setting-row">
       <label class="setting-label">Claude Model</label>
       <select id="model-select" class="setting-input" onchange="saveModel()">
-        <option value="claude-sonnet-4-20250514">Claude Sonnet 4 (Recommended)</option>
-        <option value="claude-opus-4-6">Claude Opus 4.6 (Most capable)</option>
-        <option value="claude-opus-4-20250514">Claude Opus 4.5</option>
-        <option value="claude-3-5-haiku-20241022">Claude 3.5 Haiku (Faster)</option>
+        <option value="claude-sonnet-4-6">Claude Sonnet 4.6 (Recommended)</option>
+        <option value="claude-opus-4-7">Claude Opus 4.7 (Most capable)</option>
+        <option value="claude-haiku-4-5-20251001">Claude Haiku 4.5 (Fastest)</option>
       </select>
     </div>
 
@@ -277,7 +276,7 @@
       // Load settings
       const settings = await window.electronAPI.getSettings();
       triggerInput.value = settings.trigger || '@ai';
-      modelSelect.value = settings.claudeModel || 'claude-sonnet-4-20250514';
+      modelSelect.value = settings.claudeModel || 'claude-sonnet-4-6';
       promptInput.value = settings.systemPrompt || '';
       notificationsToggle.checked = await window.electronAPI.getNotificationsEnabled();
     })();

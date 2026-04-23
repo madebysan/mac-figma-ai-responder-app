@@ -96,7 +96,7 @@ export const appStore = {
   },
 
   getClaudeModel(): string {
-    return (store.get('plain.claudeModel') as string) || 'claude-sonnet-4-20250514';
+    return (store.get('plain.claudeModel') as string) || 'claude-sonnet-4-6';
   },
 
   // Custom system prompt
